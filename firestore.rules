@@ -1,0 +1,98 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- Helpers ----------
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAluEmail() {
+      return request.auth.token.email.lower()
+        .matches('.*@(alustudent|alueducation)[.]com$');
+    }
+
+    // Signed in, ALU email and the verification link was clicked
+    function isVerifiedAlu() {
+      return signedIn() && request.auth.token.email_verified == true && isAluEmail();
+    }
+
+    function isStaff() {
+      return isVerifiedAlu() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'staff';
+    }
+
+    function changedOnly(fields) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(fields);
+    }
+
+    // ---------- Users ----------
+
+    match /users/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isStaff());
+
+      // Created right after sign up (before verification).
+      // Nobody can make themselves staff: role must be "student".
+      allow create: if signedIn()
+        && request.auth.uid == uid
+        && isAluEmail()
+        && request.resource.data.role == 'student'
+        && request.resource.data.email == request.auth.token.email.lower();
+
+      // Users can change their name but never their role
+      allow update: if signedIn()
+        && request.auth.uid == uid
+        && changedOnly(['name']);
+
+      allow delete: if false;
+    }
+
+    // ---------- Incidents ----------
+
+    match /incidents/{incidentId} {
+      allow read: if isVerifiedAlu();
+
+      allow create: if isVerifiedAlu()
+        && request.resource.data.reporterId == request.auth.uid
+        && request.resource.data.status == 'submitted'
+        && request.resource.data.upvotes.size() == 0
+        && request.resource.data.title is string
+        && request.resource.data.title.size() >= 5
+        && request.resource.data.title.size() <= 60
+        && request.resource.data.description is string
+        && request.resource.data.description.size() <= 500
+        && request.resource.data.category in
+           ['facilities', 'water', 'electricity', 'safety', 'sanitation', 'furniture'];
+
+      // 1. Staff change the status and add to the timeline
+      // 2. The reporter edits text while the report is still "submitted"
+      // 3. Another student adds or removes only their own "me too"
+      allow update: if
+        (isStaff()
+          && changedOnly(['status', 'updatedAt', 'statusHistory'])
+          && request.resource.data.status in ['submitted', 'inProgress', 'resolved', 'rejected'])
+        ||
+        (isVerifiedAlu()
+          && resource.data.reporterId == request.auth.uid
+          && resource.data.status == 'submitted'
+          && changedOnly(['title', 'description', 'location', 'updatedAt']))
+        ||
+        (isVerifiedAlu()
+          && resource.data.reporterId != request.auth.uid
+          && changedOnly(['upvotes'])
+          && request.resource.data.upvotes.toSet()
+               .difference(resource.data.upvotes.toSet())
+               .union(resource.data.upvotes.toSet()
+                 .difference(request.resource.data.upvotes.toSet()))
+             == [request.auth.uid].toSet());
+
+      // Staff can remove spam; students only their own unprocessed reports
+      allow delete: if isStaff()
+        || (isVerifiedAlu()
+            && resource.data.reporterId == request.auth.uid
+            && resource.data.status == 'submitted');
+    }
+  }
+}

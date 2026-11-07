@@ -1,0 +1,33 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isVerifiedAlu() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email.lower()
+             .matches('.*@(alustudent|alueducation)[.]com$');
+    }
+
+    function isStaff() {
+      return isVerifiedAlu() &&
+        firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'staff';
+    }
+
+    // incident_images/{uid}/{fileName}
+    match /incident_images/{uid}/{fileName} {
+      allow read: if isVerifiedAlu();
+
+      // Students upload only into their own folder, images under 5 MB
+      allow create: if isVerifiedAlu()
+        && request.auth.uid == uid
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+
+      allow update: if false;
+
+      allow delete: if isVerifiedAlu() && (request.auth.uid == uid || isStaff());
+    }
+  }
+}
