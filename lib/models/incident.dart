@@ -11,7 +11,7 @@ class Incident {
   final IncidentCategory category;
   final String location;
   final String? imageUrl;
-  final String? imagePath; // storage path, used to delete the photo
+  final String? imagePath; // Cloudinary public_id of the photo
   final IncidentStatus status;
   final String reporterId;
   final String reporterName;

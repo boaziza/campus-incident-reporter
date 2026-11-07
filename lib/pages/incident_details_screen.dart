@@ -24,7 +24,7 @@ class IncidentDetailsScreen extends StatelessWidget {
       builder: (context) => AlertDialog(
         title: const Text('Delete report?'),
         content: const Text(
-            'This removes the report and its photo permanently.'),
+            'This removes the report permanently.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),

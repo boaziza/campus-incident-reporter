@@ -235,13 +235,12 @@ class IncidentProvider extends ChangeNotifier {
         ));
   }
 
+  // Removes the report from Firestore. The photo stays in Cloudinary
+  // because deleting there needs the API secret, which must never be
+  // shipped inside a mobile app.
   Future<bool> deleteIncident(Incident incident) {
-    return _runSubmitting(() async {
-      await _incidentService.deleteIncident(incident.id);
-      if (incident.imagePath != null) {
-        await _storageService.deleteImage(incident.imagePath!);
-      }
-    });
+    return _runSubmitting(
+        () => _incidentService.deleteIncident(incident.id));
   }
 
   Future<void> toggleUpvote(Incident incident) async {
