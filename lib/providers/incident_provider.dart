@@ -267,7 +267,9 @@ class IncidentProvider extends ChangeNotifier {
       return true;
     } catch (e) {
       debugPrint('IncidentProvider error: $e');
-      _errorMessage = 'Something went wrong. Please try again.';
+      _errorMessage = e is ImageUploadException
+          ? 'Photo upload failed. Try again or submit without a photo.'
+          : 'Something went wrong. Please try again.';
       return false;
     } finally {
       _isSubmitting = false;

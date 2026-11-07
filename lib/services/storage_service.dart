@@ -12,6 +12,15 @@ class UploadResult {
   UploadResult({required this.url, required this.path});
 }
 
+class ImageUploadException implements Exception {
+  final String details;
+
+  ImageUploadException(this.details);
+
+  @override
+  String toString() => 'ImageUploadException: $details';
+}
+
 // Uploads incident photos to Cloudinary (free tier) instead of
 // Firebase Storage, which now requires the paid Blaze plan.
 // Only the returned image URL is saved in Firestore.
@@ -40,8 +49,8 @@ class StorageService {
     );
 
     if (response.statusCode != 200) {
-      throw Exception('Image upload failed (${response.statusCode}): '
-          '${response.body}');
+      throw ImageUploadException(
+          'Cloudinary returned ${response.statusCode}: ${response.body}');
     }
 
     final data = json.decode(response.body) as Map<String, dynamic>;
