@@ -37,7 +37,7 @@ class AppConstants {
 // Values from your Cloudinary dashboard. They are not secret: an unsigned
 // upload preset is designed to be used from client apps.
 class CloudinaryConfig {
-  static const String cloudName = 'YOUR_CLOUD_NAME';
+  static const String cloudName = 'vg1t324l';
   static const String uploadPreset = 'campus_incidents';
   static const String folder = 'incident_images';
 }

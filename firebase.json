@@ -1,5 +1,1 @@
-{
-  "firestore": {
-    "rules": "firestore.rules"
-  }
-}
+{"firestore":{"rules":"firestore.rules"},"flutter":{"platforms":{"android":{"default":{"projectId":"campus-incident-reporter-5ae55","appId":"1:881632065591:android:8f2644b289687ffc75a7b2","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"campus-incident-reporter-5ae55","configurations":{"android":"1:881632065591:android:8f2644b289687ffc75a7b2","ios":"1:881632065591:ios:eb9499ef05ca9acb75a7b2"}}}}}}
